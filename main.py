@@ -36,13 +36,13 @@ login = session.post(url= 'https://www.eis-scmt.com/home/lib/Controller.php', da
 
 # check if login was successful
 if "Login fehlgeschlagen! Benutzername oder Passwort ist falsch." in login.text:
-    print(datetime.now(), "Der Benutzername oder das Passwort ist falsch")
+    print(datetime.now(), "Your username or password are wrong")
     exit()
 elif "Bitte aktivieren Sie Cookies" in login.text:
-    print(datetime.now(), "Cookies nicht aktiviert")
+    print(datetime.now(), "Cookies aren't activated")
     exit()
 else:
-    print(datetime.now(), "Erfolgreich eingeloggt")
+    print(datetime.now(), "Logged in successfully")
 
 # get html of grades-view and parse it into beautiful-soup
 grades = session.get(url='https://www.eis-scmt.com/home/lib/Controller.php?oitSource=fm1004_studium.html&oitAction=noten_show').content
@@ -58,16 +58,15 @@ try:
     with open(dir_path + '/data.json') as json_file:
         oldgrades = json.load(json_file)
 except FileNotFoundError:
-    print(datetime.now(), "Keine Bestandsdaten gefunden, lege neue an ...")
+    print(datetime.now(), "No data found on your device, generating new and restarting script...")
     with open(dir_path + '/data.json', 'w') as json_file:
         json.dump(grades, json_file,  indent=4)
-    print(datetime.now(), "Starte das Skript neu.")
     os.system("python3 init.py")
     exit()
 
 # compare old with new grades
 if oldgrades != grades:
-    print(datetime.now(), 'Neue Noten entdeckt! Speichere und benachrichtige User.')
+    print(datetime.now(), 'Found new grades! Saving and notifying user.')
     updatedModules = [x for x in oldgrades + grades if x not in oldgrades]
 
     # write new grades data
@@ -79,11 +78,11 @@ if oldgrades != grades:
     #     'token': pushoverApiToken,
     #     'user': pushoverClientId,
     #     'message': json.dumps(updatedModules),
-    #     'title': 'Neue Noten!',
+    #     'title': 'New Grades!',
     #     'url': 'eis-scmt.com/',
-    #     'url_title': 'Loginpage des EIS'
+    #     'url_title': 'Loginpage of the EIS'
     # })
 else:
-    print(datetime.now(), 'Keine neue Noten entdeckt.')
+    print(datetime.now(), 'No new grades were discovered.')
 
 exit()
