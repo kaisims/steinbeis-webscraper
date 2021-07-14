@@ -1,6 +1,7 @@
 import os 
 import requests
 import json
+import sys
 from datetime import datetime
 from bs4 import BeautifulSoup
 
@@ -12,8 +13,8 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 # pushoverClientId = 'givenclientid'
 
 eisCredentials = {
-    'username': 'myemail@domain.de',
-    'password': 'P4ssw0rD'
+    'username': sys.argv[1],
+    'password': sys.argv[2]
 }
 
 postData = {
