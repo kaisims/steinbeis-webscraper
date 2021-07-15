@@ -1,5 +1,5 @@
 # Steinbeis EIS web-scraper
-This python script scrapes the [EIS of the Steinbeis University](https://www.eis-scmt.com/) in order to look for new grades. Unfortunately the Steinbeis University doesn't informs the students about new grades, so I made this script and installed it on a vServer with cron running it every 5 minutes.
+This python script scrapes the [EIS of the Steinbeis University](https://www.eis-scmt.com/) in order to look for new grades. Unfortunately the Steinbeis University doesn't inform the students about new grades, so I made this script and installed it on a vServer with cron running it every 5 minutes.
 
 # Installation
 Install python3 and pip
@@ -27,7 +27,7 @@ E.g. for the user `sandra.muster@domain.de` and her password `P4ssw0rD`
 ```
 
 # Setting up cron
-To let cron running this script (e.g. on a vServer) you need to install the script on your machine like described before. After the installation you can follow the following steps
+To let cron run this script (e.g. on a vServer) you need to install the script on your machine like described before. After the installation you can follow the following steps
 
 Execute crontab and edit the crontab config
 ```bash
@@ -56,7 +56,7 @@ Next you have to restart the cron service to apply the changes you've made
 Now your cron-job is looking for new grades every 5 minutes. For a deeper dive into cron and crontab have a look at [this](https://www.adminschoice.com/crontab-quick-reference) tutorial.
 
 # Notifications
-I have implemented the notifications with the help of [Pushover](https://pushover.net/). Sample code is already in the script, just need to comment it out and enter your account credentials.
+I have implemented the notifications with the help of [Pushover](https://pushover.net/). The sample code is already in the script, just need to comment it out and enter your account credentials.
 
 ```python
 pushoverApiToken = 'apitokenformyapplication'
