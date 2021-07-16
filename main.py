@@ -57,6 +57,26 @@ def getCurrentGrades():
 
     return grades
 
+# Looks for previously generated data and loads it. 
+# If no data is available the current grades are saved and
+# the script will restart
+def getSavedGrades():
+    try:
+        oldgrades = []
+        with open(dir_path + '/data.json') as json_file:
+            oldgrades = json.load(json_file)
+            return oldgrades
+
+    except FileNotFoundError:
+        print(datetime.now(), "No data found on your device, generating new and restarting script...")
+
+        grades = getCurrentGrades()
+        with open(dir_path + '/data.json', 'w') as json_file:
+            json.dump(grades, json_file,  indent=4)
+
+        os.system("python3 main.py")
+        exit()
+
 # Notifyies a user via pushover
 def notifyUser(updatedModules):
     # notify me with pushover
@@ -74,16 +94,7 @@ def main():
     grades = getCurrentGrades()
 
     # look for older grades-data
-    try:
-        oldgrades = []
-        with open(dir_path + '/data.json') as json_file:
-            oldgrades = json.load(json_file)
-    except FileNotFoundError:
-        print(datetime.now(), "No data found on your device, generating new and restarting script...")
-        with open(dir_path + '/data.json', 'w') as json_file:
-            json.dump(grades, json_file,  indent=4)
-        os.system("python3 init.py")
-        exit()
+    oldgrades = getSavedGrades()
 
     # compare old with new grades
     if oldgrades != grades:
