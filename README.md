@@ -1,5 +1,5 @@
 # Steinbeis EIS web-scraper
-This python script scrapes the [EIS of the Steinbeis University](https://www.eis-scmt.com/) in order to look for new grades. Unfortunately the Steinbeis University doesn't inform the students about new grades, so I made this script and installed it on a vServer with cron running it every 5 minutes.
+This python script scrapes the [EIS of the Steinbeis University](https://www.eis-scmt.com/) in order to look for new grades and grade averages. Unfortunately the Steinbeis University doesn't inform the students about new grades or grade averages, so I made this script and installed it on a vServer with cron running it every 5 minutes.
 
 # Installation
 Install python3 and pip
