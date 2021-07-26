@@ -6,8 +6,8 @@ from datetime import datetime, date
 from bs4 import BeautifulSoup
 
 # Pushover Integration
-PUSHOVER_API_TOKEN = 'ax2qpii6o8whor2953sp48yp87ycjj'
-PUSHOVER_CLIENT_ID = 'uw7ymscyvdkq589dtgruq8ww3qkbtq'
+PUSHOVER_API_TOKEN = 'myPrivateToken'
+PUSHOVER_CLIENT_ID = 'myPrivateClientID'
 
 EIS_CREDENTIALS = {
     'username': sys.argv[1],
