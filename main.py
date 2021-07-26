@@ -215,7 +215,7 @@ def main():
                 json_file.close()
             
             # Notify user via pushover
-            notifyUser(changedModules)
+            # notifyUser(changedModules)
 
         else:
           print(datetime.now(), 'No new grades were discovered.')
