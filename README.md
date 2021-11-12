@@ -62,3 +62,15 @@ I have implemented the notifications with the help of [Pushover](https://pushove
 pushoverApiToken = 'apitokenformyapplication'
 pushoverClientId = 'givenclientid'
 ```
+
+# Docker
+
+Build your own docker image, when inside the docker folder:
+```bash
+> docker build --tag python-eis-scraper .
+```
+
+After a successful build, run it with your credentials attached:
+```bash
+> docker run -e EIS_USERNAME='sandra.muster@domain.de' -e EIS_PASSWORD='P4ssw0rD' python-eis-scraper:latest
+```

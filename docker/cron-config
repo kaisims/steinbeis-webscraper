@@ -1,0 +1,1 @@
+*/5 * * * * /usr/bin/python3 /app/main.py $EIS_USERNAME $EIS_PASSWORD >> /var/log/eis-scraper.log 2>&1
