@@ -2,12 +2,11 @@ import os
 import requests
 import json
 import sys
+import smtplib
 from datetime import datetime, date
+from enum import Enum
 from bs4 import BeautifulSoup
-
-# Pushover Integration
-PUSHOVER_API_TOKEN = 'myPrivateToken'
-PUSHOVER_CLIENT_ID = 'myPrivateClientID'
+from email.mime.text import MIMEText
 
 EIS_CREDENTIALS = {
     'username': sys.argv[1],
@@ -25,6 +24,24 @@ POST_DATA = {
     'oitAction': 'doLogin',
     'Login': 'Login'
 }
+
+class NOTIFICATION_TYPE(Enum):
+    NONE = 0
+    PUSHOVER = 1
+    EMAIL = 2
+
+# Configs
+NOTIFY_TYPE = NOTIFICATION_TYPE.NONE
+
+# Configs - Pushover Integration
+PUSHOVER_API_TOKEN = 'myPrivateToken'
+PUSHOVER_CLIENT_ID = 'myPrivateClientID'
+
+# Configs - Email Integration
+RECIPIENT_EMAIL = 'yourmail@domain.de'
+RECIPIENT_PASSWORD = 'yourSecretPw'
+SMTP_HOSTNAME = 'smtp.yourMailProvider.de'
+SMTP_PORT = 465
 
 session = requests.Session()
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -105,6 +122,13 @@ def getSavedGrades():
 
 # Notifyies a user via pushover
 def notifyUser(updatedModules):
+    match NOTIFY_TYPE.value:
+        case NOTIFICATION_TYPE.NONE.value: print(datetime.now(), 'No notification-method specified')
+        case NOTIFICATION_TYPE.PUSHOVER.value: notifyWithPushover(updatedModules)
+        case NOTIFICATION_TYPE.EMAIL.value: notifyWithEmail(updatedModules)
+        case _: print('sth went wrong')
+
+def notifyWithPushover(updatedModules):
     # notify me with pushover
     for module in updatedModules:
         requests.post(url='https://api.pushover.net/1/messages.json', data={
@@ -115,6 +139,24 @@ def notifyUser(updatedModules):
             'url': 'eis-scmt.com/',
             'url_title': 'EIS login'
         })
+
+def notifyWithEmail(updatedModules):
+    bodyString = ""
+
+    for module in updatedModules:
+        bodyString += f'Update in {module.get("moduleName")}'
+        bodyString += buildMessage(module)
+
+    msg = MIMEText(bodyString)
+    msg['Subject'] = 'New grades discovered!'
+    msg['From'] = 'steinbeis-webscraper@marvinkeller.de'
+    msg['To'] = RECIPIENT_EMAIL
+
+    # Send message via your own SMTP server
+    s = smtplib.SMTP_SSL(host=SMTP_HOSTNAME, port=SMTP_PORT)
+    s.login(user=RECIPIENT_EMAIL, password=RECIPIENT_PASSWORD)
+    s.sendmail(RECIPIENT_EMAIL, [RECIPIENT_EMAIL], msg.as_string())
+    s.quit()
 
 def buildMessage(module):
     messageString = ''
@@ -214,8 +256,8 @@ def main():
                 json.dump(oldgrades, json_file, indent=4)
                 json_file.close()
             
-            # Notify user via pushover
-            # notifyUser(changedModules)
+            # Notify user
+            notifyUser(changedModules)
 
         else:
           print(datetime.now(), 'No new grades were discovered.')
