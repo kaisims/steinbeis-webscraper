@@ -44,6 +44,7 @@ SMTP_HOSTNAME = 'smtp.yourMailProvider.de'
 SMTP_PORT = 465
 
 session = requests.Session()
+session.headers.update({ 'User-Agent': 'steinbeis-webscraper' })
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Scrapes the EIS to get current grades data
@@ -79,22 +80,24 @@ def getCurrentGrades():
         'gradeAvg': ''
     } for modul in soup_grades.select('tr[oitct="ctDataSetNext"]')]
 
+    # OUTCOMMENTED BECAUSE GRADE AVG FETCHING CAUSES 404 ERRORS AT STEINBEIS
+    # ----------------------------------------------------------------------
     # get averages for all modules
-    gradeAvgs = []
-    examGrades = [grade for grade in grades if grade.get("type") == "K"]
+    # gradeAvgs = []
+    # examGrades = [grade for grade in grades if grade.get("type") == "K"]
 
     # search for grade-averages for each module of type "K"
-    for grade in examGrades:
-        gradeAvg = getCurrentGradePointAverage(grade.get("moduleName"), datetime.strptime(grade.get("date"),'%Y-%m-%d').date() if grade.get("date") != "" else "")
+    # for grade in examGrades:
+    #     gradeAvg = getCurrentGradePointAverage(grade.get("moduleName"), datetime.strptime(grade.get("date"),'%Y-%m-%d').date() if grade.get("date") != "" else "")
 
-        if gradeAvg != None and ("-" not in gradeAvg.get("avgGrade") or "ausstehend" not in gradeAvg.get("avgGrade")):
-            gradeAvgs.append(gradeAvg)
+    #     if gradeAvg != None and ("-" not in gradeAvg.get("avgGrade") or "ausstehend" not in gradeAvg.get("avgGrade")):
+    #         gradeAvgs.append(gradeAvg)
     
-    # add grade-averages to overall data collection
-    for idx, grade in enumerate(grades):
-        for gradeAvg in gradeAvgs:
-            if grade.get("type") == "K" and grade.get("moduleName") == gradeAvg.get("module"):
-                grades[idx]["gradeAvg"] = gradeAvg.get("avgGrade")
+    # # add grade-averages to overall data collection
+    # for idx, grade in enumerate(grades):
+    #     for gradeAvg in gradeAvgs:
+    #         if grade.get("type") == "K" and grade.get("moduleName") == gradeAvg.get("module"):
+    #             grades[idx]["gradeAvg"] = gradeAvg.get("avgGrade")
 
     return grades
 
@@ -122,11 +125,19 @@ def getSavedGrades():
 
 # Notifyies a user via pushover
 def notifyUser(updatedModules):
-    match NOTIFY_TYPE.value:
-        case NOTIFICATION_TYPE.NONE.value: print(datetime.now(), 'No notification-method specified')
-        case NOTIFICATION_TYPE.PUSHOVER.value: notifyWithPushover(updatedModules)
-        case NOTIFICATION_TYPE.EMAIL.value: notifyWithEmail(updatedModules)
-        case _: print('sth went wrong')
+    if (NOTIFY_TYPE == NOTIFICATION_TYPE.NONE): 
+        print(datetime.now(), 'No notification-method specified')
+
+    elif (NOTIFY_TYPE == NOTIFICATION_TYPE.PUSHOVER):
+        print(datetime.now(), 'Notifying via Pushover')
+        notifyWithPushover(updatedModules)
+
+    elif (NOTIFY_TYPE == NOTIFICATION_TYPE.EMAIL):
+        print(datetime.now(), 'Notifying via E-Mail')
+        notifyWithEmail(updatedModules)
+
+    else:
+        print(datetime.now(), 'sth went wrong')
 
 def notifyWithPushover(updatedModules):
     # notify me with pushover
