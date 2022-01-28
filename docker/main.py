@@ -2,17 +2,18 @@ import os
 import requests
 import json
 import sys
+import smtplib
 from datetime import datetime, date
+from enum import Enum
 from bs4 import BeautifulSoup
-
-# Pushover Integration
-PUSHOVER_API_TOKEN = 'myPrivateToken'
-PUSHOVER_CLIENT_ID = 'myPrivateClientID'
+from email.mime.text import MIMEText
 
 EIS_CREDENTIALS = {
     'username': sys.argv[1],
     'password': sys.argv[2]
 }
+
+PUSHBULLET_API_TOKEN = sys.argv[3]
 
 POST_DATA = {
     'username': EIS_CREDENTIALS.get('username'),
@@ -26,7 +27,27 @@ POST_DATA = {
     'Login': 'Login'
 }
 
+class NOTIFICATION_TYPE(Enum):
+    NONE = 0
+    PUSHOVER = 1
+    EMAIL = 2
+    PUSHBULLET = 3
+
+# Configs
+NOTIFY_TYPE = NOTIFICATION_TYPE.NONE
+
+# Configs - Pushover Integration
+PUSHOVER_API_TOKEN = 'myPrivateToken'
+PUSHOVER_CLIENT_ID = 'myPrivateClientID'
+
+# Configs - Email Integration
+RECIPIENT_EMAIL = 'yourmail@domain.de'
+RECIPIENT_PASSWORD = 'yourSecretPw'
+SMTP_HOSTNAME = 'smtp.yourMailProvider.de'
+SMTP_PORT = 465
+
 session = requests.Session()
+session.headers.update({ 'User-Agent': 'steinbeis-webscraper' })
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Scrapes the EIS to get current grades data
@@ -52,9 +73,9 @@ def getCurrentGrades():
     soup_grades = BeautifulSoup(grades, 'html.parser')
 
     # extract modules and grades into a list of dicts
-    grades = [{ 
+    grades = [{
         'moduleName': modul.select_one('td:nth-of-type(1)').get_text(),
-        'grade': modul.select_one('td:nth-of-type(4)').get_text(), 
+        'grade': modul.select_one('td:nth-of-type(4)').get_text(),
         'type': modul.select_one('td:nth-of-type(2)').get_text(),
         'date': modul.select_one('td:nth-of-type(7)').get_text(),
         'firstExaminer': modul.select_one('td:nth-of-type(8)').get_text(),
@@ -62,26 +83,28 @@ def getCurrentGrades():
         'gradeAvg': ''
     } for modul in soup_grades.select('tr[oitct="ctDataSetNext"]')]
 
+    # OUTCOMMENTED BECAUSE GRADE AVG FETCHING CAUSES 404 ERRORS AT STEINBEIS
+    # ----------------------------------------------------------------------
     # get averages for all modules
-    gradeAvgs = []
-    examGrades = [grade for grade in grades if grade.get("type") == "K"]
+    # gradeAvgs = []
+    # examGrades = [grade for grade in grades if grade.get("type") == "K"]
 
     # search for grade-averages for each module of type "K"
-    for grade in examGrades:
-        gradeAvg = getCurrentGradePointAverage(grade.get("moduleName"), datetime.strptime(grade.get("date"),'%Y-%m-%d').date() if grade.get("date") != "" else "")
+    # for grade in examGrades:
+    #     gradeAvg = getCurrentGradePointAverage(grade.get("moduleName"), datetime.strptime(grade.get("date"),'%Y-%m-%d').date() if grade.get("date") != "" else "")
 
-        if gradeAvg != None and ("-" not in gradeAvg.get("avgGrade") or "ausstehend" not in gradeAvg.get("avgGrade")):
-            gradeAvgs.append(gradeAvg)
-    
-    # add grade-averages to overall data collection
-    for idx, grade in enumerate(grades):
-        for gradeAvg in gradeAvgs:
-            if grade.get("type") == "K" and grade.get("moduleName") == gradeAvg.get("module"):
-                grades[idx]["gradeAvg"] = gradeAvg.get("avgGrade")
+    #     if gradeAvg != None and ("-" not in gradeAvg.get("avgGrade") or "ausstehend" not in gradeAvg.get("avgGrade")):
+    #         gradeAvgs.append(gradeAvg)
+
+    # # add grade-averages to overall data collection
+    # for idx, grade in enumerate(grades):
+    #     for gradeAvg in gradeAvgs:
+    #         if grade.get("type") == "K" and grade.get("moduleName") == gradeAvg.get("module"):
+    #             grades[idx]["gradeAvg"] = gradeAvg.get("avgGrade")
 
     return grades
 
-# Looks for previously generated data and loads it. 
+# Looks for previously generated data and loads it.
 # If no data is available the current grades are saved and
 # the script will restart
 def getSavedGrades():
@@ -105,6 +128,25 @@ def getSavedGrades():
 
 # Notifyies a user via pushover
 def notifyUser(updatedModules):
+    if (NOTIFY_TYPE == NOTIFICATION_TYPE.NONE):
+        print(datetime.now(), 'No notification-method specified')
+
+    elif (NOTIFY_TYPE == NOTIFICATION_TYPE.PUSHOVER):
+        print(datetime.now(), 'Notifying via Pushover')
+        notifyWithPushover(updatedModules)
+
+    elif (NOTIFY_TYPE == NOTIFICATION_TYPE.EMAIL):
+        print(datetime.now(), 'Notifying via E-Mail')
+        notifyWithEmail(updatedModules)
+
+    elif (NOTIFY_TYPE == NOTIFICATION_TYPE.PUSHBULLET):
+        print(datetime.now(), 'Notifying via PushBullet')
+        notifyWithPushBullet(updatedModules)
+
+    else:
+        print(datetime.now(), 'sth went wrong')
+
+def notifyWithPushover(updatedModules):
     # notify me with pushover
     for module in updatedModules:
         requests.post(url='https://api.pushover.net/1/messages.json', data={
@@ -115,6 +157,35 @@ def notifyUser(updatedModules):
             'url': 'eis-scmt.com/',
             'url_title': 'EIS login'
         })
+
+def notifyWithPushBullet(updatedModules):
+    # notify me with pushover
+    for module in updatedModules:
+        requests.post(url='https://api.pushbullet.com/v2/pushes', data={
+            'Access-Token': PUSHBULLET_API_TOKEN,
+            'body': buildMessage(module),
+            'title': f'Update in {module.get("moduleName")}',
+            'url': 'https://www.eis-scmt.com/home/lib/Controller.php',
+            'url_title': 'EIS login'
+        })
+
+def notifyWithEmail(updatedModules):
+    bodyString = ""
+
+    for module in updatedModules:
+        bodyString += f'Update in {module.get("moduleName")}'
+        bodyString += buildMessage(module)
+
+    msg = MIMEText(bodyString)
+    msg['Subject'] = 'New grades discovered!'
+    msg['From'] = 'steinbeis-webscraper@marvinkeller.de'
+    msg['To'] = RECIPIENT_EMAIL
+
+    # Send message via your own SMTP server
+    s = smtplib.SMTP_SSL(host=SMTP_HOSTNAME, port=SMTP_PORT)
+    s.login(user=RECIPIENT_EMAIL, password=RECIPIENT_PASSWORD)
+    s.sendmail(RECIPIENT_EMAIL, [RECIPIENT_EMAIL], msg.as_string())
+    s.quit()
 
 def buildMessage(module):
     messageString = ''
@@ -132,7 +203,7 @@ def getCurrentGradePointAverage(moduleTitle, dateOfExam: date):
     if dateOfExam == "": return None
 
     reqUrl = f"https://www.eis-scmt.com/leitfaden/news/{dateOfExam.strftime('%m')}_{dateOfExam.strftime('%Y')}.html"
-    
+
     res = requests.get(url=reqUrl)
     if not res.ok: return None
 
@@ -141,11 +212,11 @@ def getCurrentGradePointAverage(moduleTitle, dateOfExam: date):
     for modul in soup_gradesAvgs.select('tr'):
         if moduleTitle in modul.select_one('td:nth-of-type(3)').get_text() and dateOfExam.strftime('%d.%m.%Y') in modul.select_one('td:nth-of-type(1)').get_text():
             return {
-                'module': moduleTitle, 
-                'date': dateOfExam, 
+                'module': moduleTitle,
+                'date': dateOfExam,
                 'avgGrade': modul.select_one('td:nth-of-type(4)').get_text().replace('\n', '')
             }
-    
+
     return None
 
 # Because grade averages will be deleted after a few weeks,
@@ -181,7 +252,7 @@ def getUpdatedModule(oldGrade, newGrade):
 
     return discvDiff, returnGrade
 
-def main(): 
+def main():
     # get current grades
     grades = getCurrentGrades()
 
@@ -213,9 +284,9 @@ def main():
             with open(dir_path + '/data.json', 'w') as json_file:
                 json.dump(oldgrades, json_file, indent=4)
                 json_file.close()
-            
-            # Notify user via pushover
-            # notifyUser(changedModules)
+
+            # Notify user
+            notifyUser(changedModules)
 
         else:
           print(datetime.now(), 'No new grades were discovered.')
