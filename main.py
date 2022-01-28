@@ -13,6 +13,8 @@ EIS_CREDENTIALS = {
     'password': sys.argv[2]
 }
 
+PUSHBULLET_API_TOKEN = sys.argv[3]
+
 POST_DATA = {
     'username': EIS_CREDENTIALS.get('username'),
     'password': EIS_CREDENTIALS.get('password'),
@@ -29,6 +31,7 @@ class NOTIFICATION_TYPE(Enum):
     NONE = 0
     PUSHOVER = 1
     EMAIL = 2
+    PUSHBULLET = 3
 
 # Configs
 NOTIFY_TYPE = NOTIFICATION_TYPE.NONE
@@ -70,9 +73,9 @@ def getCurrentGrades():
     soup_grades = BeautifulSoup(grades, 'html.parser')
 
     # extract modules and grades into a list of dicts
-    grades = [{ 
+    grades = [{
         'moduleName': modul.select_one('td:nth-of-type(1)').get_text(),
-        'grade': modul.select_one('td:nth-of-type(4)').get_text(), 
+        'grade': modul.select_one('td:nth-of-type(4)').get_text(),
         'type': modul.select_one('td:nth-of-type(2)').get_text(),
         'date': modul.select_one('td:nth-of-type(7)').get_text(),
         'firstExaminer': modul.select_one('td:nth-of-type(8)').get_text(),
@@ -92,7 +95,7 @@ def getCurrentGrades():
 
     #     if gradeAvg != None and ("-" not in gradeAvg.get("avgGrade") or "ausstehend" not in gradeAvg.get("avgGrade")):
     #         gradeAvgs.append(gradeAvg)
-    
+
     # # add grade-averages to overall data collection
     # for idx, grade in enumerate(grades):
     #     for gradeAvg in gradeAvgs:
@@ -101,7 +104,7 @@ def getCurrentGrades():
 
     return grades
 
-# Looks for previously generated data and loads it. 
+# Looks for previously generated data and loads it.
 # If no data is available the current grades are saved and
 # the script will restart
 def getSavedGrades():
@@ -125,7 +128,7 @@ def getSavedGrades():
 
 # Notifyies a user via pushover
 def notifyUser(updatedModules):
-    if (NOTIFY_TYPE == NOTIFICATION_TYPE.NONE): 
+    if (NOTIFY_TYPE == NOTIFICATION_TYPE.NONE):
         print(datetime.now(), 'No notification-method specified')
 
     elif (NOTIFY_TYPE == NOTIFICATION_TYPE.PUSHOVER):
@@ -135,6 +138,10 @@ def notifyUser(updatedModules):
     elif (NOTIFY_TYPE == NOTIFICATION_TYPE.EMAIL):
         print(datetime.now(), 'Notifying via E-Mail')
         notifyWithEmail(updatedModules)
+
+    elif (NOTIFY_TYPE == NOTIFICATION_TYPE.PUSHBULLET):
+        print(datetime.now(), 'Notifying via PushBullet')
+        notifyWithPushBullet(updatedModules)
 
     else:
         print(datetime.now(), 'sth went wrong')
@@ -148,6 +155,17 @@ def notifyWithPushover(updatedModules):
             'message': buildMessage(module),
             'title': f'Update in {module.get("moduleName")}',
             'url': 'eis-scmt.com/',
+            'url_title': 'EIS login'
+        })
+
+def notifyWithPushBullet(updatedModules):
+    # notify me with pushover
+    for module in updatedModules:
+        requests.post(url='https://api.pushbullet.com/v2/pushes', data={
+            'Access-Token': PUSHBULLET_API_TOKEN,
+            'body': buildMessage(module),
+            'title': f'Update in {module.get("moduleName")}',
+            'url': 'https://www.eis-scmt.com/home/lib/Controller.php',
             'url_title': 'EIS login'
         })
 
@@ -185,7 +203,7 @@ def getCurrentGradePointAverage(moduleTitle, dateOfExam: date):
     if dateOfExam == "": return None
 
     reqUrl = f"https://www.eis-scmt.com/leitfaden/news/{dateOfExam.strftime('%m')}_{dateOfExam.strftime('%Y')}.html"
-    
+
     res = requests.get(url=reqUrl)
     if not res.ok: return None
 
@@ -194,11 +212,11 @@ def getCurrentGradePointAverage(moduleTitle, dateOfExam: date):
     for modul in soup_gradesAvgs.select('tr'):
         if moduleTitle in modul.select_one('td:nth-of-type(3)').get_text() and dateOfExam.strftime('%d.%m.%Y') in modul.select_one('td:nth-of-type(1)').get_text():
             return {
-                'module': moduleTitle, 
-                'date': dateOfExam, 
+                'module': moduleTitle,
+                'date': dateOfExam,
                 'avgGrade': modul.select_one('td:nth-of-type(4)').get_text().replace('\n', '')
             }
-    
+
     return None
 
 # Because grade averages will be deleted after a few weeks,
@@ -234,7 +252,7 @@ def getUpdatedModule(oldGrade, newGrade):
 
     return discvDiff, returnGrade
 
-def main(): 
+def main():
     # get current grades
     grades = getCurrentGrades()
 
@@ -266,7 +284,10 @@ def main():
             with open(dir_path + '/data.json', 'w') as json_file:
                 json.dump(oldgrades, json_file, indent=4)
                 json_file.close()
-            
+
+            if PUSHBULLET_API_TOKEN !="":
+                NOTIFICATION_TYPE = NOTIFICATION_TYPE.PUSHBULLET
+
             # Notify user
             notifyUser(changedModules)
 

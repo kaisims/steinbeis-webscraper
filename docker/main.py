@@ -285,6 +285,9 @@ def main():
                 json.dump(oldgrades, json_file, indent=4)
                 json_file.close()
 
+            if PUSHBULLET_API_TOKEN !="":
+                NOTIFICATION_TYPE = NOTIFICATION_TYPE.PUSHBULLET
+
             # Notify user
             notifyUser(changedModules)
 
