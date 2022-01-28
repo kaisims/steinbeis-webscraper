@@ -13,7 +13,9 @@ EIS_CREDENTIALS = {
     'password': sys.argv[2]
 }
 
-PUSHBULLET_API_TOKEN = sys.argv[3]
+PUSHBULLET_API  = {
+    'token': sys.argv[3]
+}
 
 POST_DATA = {
     'username': EIS_CREDENTIALS.get('username'),
@@ -123,7 +125,7 @@ def getSavedGrades():
             json.dump(grades, json_file,  indent=4)
             json_file.close()
 
-        os.system(f"python3 {dir_path}/main.py {sys.argv[1]} {sys.argv[2]}")
+        os.system(f"python3 {dir_path}/main.py {sys.argv[1]} {sys.argv[2]} {sys.argv[3]} ")
         exit()
 
 # Notifyies a user via pushover
@@ -162,7 +164,7 @@ def notifyWithPushBullet(updatedModules):
     # notify me with pushover
     for module in updatedModules:
         requests.post(url='https://api.pushbullet.com/v2/pushes', data={
-            'Access-Token': PUSHBULLET_API_TOKEN,
+            'Access-Token': PUSHBULLET_API.get('token'),
             'body': buildMessage(module),
             'title': f'Update in {module.get("moduleName")}',
             'url': 'https://www.eis-scmt.com/home/lib/Controller.php',
@@ -178,7 +180,7 @@ def notifyWithEmail(updatedModules):
 
     msg = MIMEText(bodyString)
     msg['Subject'] = 'New grades discovered!'
-    msg['From'] = 'steinbeis-webscraper@marvinkeller.de'
+    msg['From'] = 'yourmail@domain.de'
     msg['To'] = RECIPIENT_EMAIL
 
     # Send message via your own SMTP server
@@ -285,7 +287,7 @@ def main():
                 json.dump(oldgrades, json_file, indent=4)
                 json_file.close()
 
-            if PUSHBULLET_API_TOKEN !="":
+            if PUSHBULLET_API.get('token') !="":
                 NOTIFICATION_TYPE = NOTIFICATION_TYPE.PUSHBULLET
 
             # Notify user
