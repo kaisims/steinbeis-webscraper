@@ -161,14 +161,16 @@ def notifyWithPushover(updatedModules):
         })
 
 def notifyWithPushBullet(updatedModules):
-    # notify me with pushover
+    # notify me with pushbullet
     for module in updatedModules:
-        requests.post(url='https://api.pushbullet.com/v2/pushes', data={
-            'Access-Token': PUSHBULLET_API.get('token'),
-            'body': buildMessage(module),
-            'title': f'Update in {module.get("moduleName")}',
+        x = requests.post(url='https://api.pushbullet.com/v2/pushes', json={
             'url': 'https://www.eis-scmt.com/home/lib/Controller.php',
-            'url_title': 'EIS login'
+            'type': 'link',
+            'title': f'Update in {module.get("moduleName")}',
+            'body': buildMessage(module)
+        }, headers={
+            "Content-Type": "application/json",
+            "Access-Token": PUSHBULLET_API.get('token')
         })
 
 def notifyWithEmail(updatedModules):
@@ -287,8 +289,10 @@ def main():
                 json.dump(oldgrades, json_file, indent=4)
                 json_file.close()
 
-            if PUSHBULLET_API.get('token') !="":
-                NOTIFICATION_TYPE = NOTIFICATION_TYPE.PUSHBULLET
+            if PUSHBULLET_API.get("token") !="":
+                print('set notfiying to pushbullet')
+                global NOTIFY_TYPE
+                NOTIFY_TYPE = NOTIFICATION_TYPE.PUSHBULLET
 
             # Notify user
             notifyUser(changedModules)
