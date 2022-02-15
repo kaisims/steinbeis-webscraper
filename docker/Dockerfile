@@ -3,11 +3,8 @@ FROM node:8-alpine
 EXPOSE 80
 COPY * /app/
 WORKDIR /app
-CMD node index.js
+CMD ["node", "index.js"]
 
-FROM ubuntu
-
-WORKDIR /app
 
 # Python config
 RUN apt-get update && apt-get -y install python3 python3-pip
