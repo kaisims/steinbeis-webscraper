@@ -1,18 +1,20 @@
-FROM node
+FROM node:17-alpine
 
 EXPOSE 80
 COPY * /app/
 WORKDIR /app
 
-#nodejs config
-RUN npm install -g nodemon
+
 
 # Python config
-RUN apt-get update || : && apt-get install python3 python3-pip -y
+RUN apt-get update || : && apt-get install python3 python3-pip npm -y
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY . .
 RUN chmod +x entrypoint.sh
+
+#nodejs config
+RUN npm install -g nodemon
 
 # cron config
 RUN apt-get -y install cron
