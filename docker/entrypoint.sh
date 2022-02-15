@@ -1,6 +1,6 @@
 printenv > /etc/environment
 
 echo "start node server"
-nodemon index.js
+nohup nodemon index.js </dev/null &
 echo "start cronjob"
 cron && tail -f /var/log/eis-scraper.log
