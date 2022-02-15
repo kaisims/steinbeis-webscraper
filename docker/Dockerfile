@@ -3,7 +3,6 @@ FROM node:10-stretch-slim
 EXPOSE 80
 COPY * /app/
 WORKDIR /app
-CMD ["node", "index.js"]
 
 
 # Python config
@@ -21,4 +20,5 @@ RUN crontab /etc/cron.d/cron-config
 RUN touch /var/log/eis-scraper.log
  
 # Run the command on container startup
+CMD ["node", "index.js"]
 CMD /app/entrypoint.sh
