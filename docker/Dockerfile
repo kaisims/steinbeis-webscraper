@@ -1,9 +1,11 @@
-FROM node:10-stretch-slim
+FROM node
 
 EXPOSE 80
 COPY * /app/
 WORKDIR /app
 
+#nodejs config
+RUN npm install -g nodemon
 
 # Python config
 RUN apt-get update || : && apt-get install python3 python3-pip -y
