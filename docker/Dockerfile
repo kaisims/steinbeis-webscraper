@@ -1,5 +1,5 @@
 # node.js config
-FROM node:8-alpine
+FROM node:9-slim
 EXPOSE 80
 COPY * /app/
 WORKDIR /app
