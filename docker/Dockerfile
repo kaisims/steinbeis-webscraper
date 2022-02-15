@@ -2,6 +2,8 @@
 FROM node:8-alpine
 EXPOSE 80
 COPY * /app/
+WORKDIR /app
+CMD node index.js
 
 FROM ubuntu
 
@@ -22,4 +24,4 @@ RUN crontab /etc/cron.d/cron-config
 RUN touch /var/log/eis-scraper.log
  
 # Run the command on container startup
-ENTRYPOINT node index.js
+CMD /app/entrypoint.sh
