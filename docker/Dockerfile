@@ -17,7 +17,7 @@ RUN chmod +x entrypoint.sh
 RUN npm install -g nodemon
 
 # cron config
-RUN apk add cron
+#RUN apk add cron
 COPY cron-config /etc/cron.d/cron-config
 RUN chmod 0644 /etc/cron.d/cron-config
 RUN crontab /etc/cron.d/cron-config
