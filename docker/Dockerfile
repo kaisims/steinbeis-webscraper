@@ -1,5 +1,5 @@
-# node.js config
-FROM node:9-slim
+FROM node:10-stretch-slim
+
 EXPOSE 80
 COPY * /app/
 WORKDIR /app
@@ -7,7 +7,7 @@ CMD ["node", "index.js"]
 
 
 # Python config
-RUN apt-get update || : && apt-get -y install python3 python3-pip
+RUN apt-get update || : && apt-get install python3 python3-pip -y
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY . .
