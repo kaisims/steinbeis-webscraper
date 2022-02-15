@@ -7,7 +7,7 @@ WORKDIR /app
 
 
 # Python config
-RUN apt-get update || : && apt-get install python3 python3-pip npm -y
+RUN apk update || : && apk add python3 python3-pip npm -y
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY . .
@@ -17,7 +17,7 @@ RUN chmod +x entrypoint.sh
 RUN npm install -g nodemon
 
 # cron config
-RUN apt-get -y install cron
+RUN apk -y add cron
 COPY cron-config /etc/cron.d/cron-config
 RUN chmod 0644 /etc/cron.d/cron-config
 RUN crontab /etc/cron.d/cron-config
