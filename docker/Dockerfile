@@ -7,7 +7,7 @@ CMD ["node", "index.js"]
 
 
 # Python config
-RUN apt-get update && apt-get -y install python3 python3-pip
+RUN apt-get update || : && apt-get -y install python3 python3-pip
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY . .
